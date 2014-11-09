@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 use strict;
-use lib 'rangehash';
+use lib 'RangeHash';
 use RangeHash;
 use Data::Dumper qw(Dumper);
 
