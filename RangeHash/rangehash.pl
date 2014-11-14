@@ -11,8 +11,6 @@ open(O, $segment_file);
 while ( my $line = <O> ) {
   next unless $line =~ m/^\@SQ/;
   chomp $line;
-#@SQ     SN:chr1 LN:249250621    UR:file:/mapr/NEWYORK/user/aday/hg19/hg19.fa    M5:1b22b98cdeb4a9304cb5d48026a85128
-
   my ($seg, $len) = split /\s+/, $line;
   $seg =~ s/SN://;
   $len =~ s/LN://;
