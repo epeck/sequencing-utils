@@ -1,0 +1,4 @@
+SAM_HEADER=./NA12878.new_header.sam
+ALIGN_BASE=./hg19.fa
+ANNOTATION=./vcf
+TOOLS=./
