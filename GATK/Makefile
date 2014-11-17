@@ -1,8 +1,11 @@
+# !!!! Configure variables required in this Makefile !!!!
+include config.mk
 .PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
-SAM_HEADER=../../../NA12878/NA12878.new_header.sam
-ALIGN_BASE=../../../hg19/hg19.fa
-ANNOTATION=../../../vcf
-TOOLS=../../../tools
+
+all: metrics all.vcf
+	
+metrics:
+	mkdir -p metrics
 
 %.base.sam : %.fq
 	cat $< | ${TOOLS}/bwa/bwa mem hg19/hg19.fa - | perl -ne 'chomp;print "$_";print "\tRG:Z:0" unless m/^@/;print "\n"' | ${TOOLS}/samtools/samtools sort -O sam -T /tmp/sam$$. | grep -vE '^@' > $@
@@ -39,7 +42,7 @@ chromosomes : chr22.split.bam chrY.split.bam chrM.split.bam
 	${TOOLS}/samtools/samtools index $@
 
 %.realn.intervals : %.nodup.bam
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T RealignerTargetCreator -I $< -R ${ALIGN_BASE} -o $@ -known ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -known ${ANNOTATION}/1000G_phase1.indels.hg19.vcf
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T RealignerTargetCreator -I $< -R ${ALIGN_BASE} -o $@ -known ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -known ${ANNOTATION}/1000G_phase1.indels.hg19.vcf -nt $(DATA_THREADS)
 
 %.realn.bam : %.nodup.bam
 	${MAKE} ${@:bam=intervals}
@@ -47,25 +50,26 @@ chromosomes : chr22.split.bam chrY.split.bam chrM.split.bam
 	${TOOLS}/samtools/samtools index $@
 
 %.recal.grp : %.realn.bam
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T BaseRecalibrator -I $< -R ${ALIGN_BASE} -o $@ -knownSites ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -knownSites ${ANNOTATION}/1000G_phase1.indels.hg19.vcf -knownSites ${ANNOTATION}/dbsnp_137.hg19.vcf
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T BaseRecalibrator -I $< -R ${ALIGN_BASE} -o $@ -knownSites ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -knownSites ${ANNOTATION}/1000G_phase1.indels.hg19.vcf -knownSites ${ANNOTATION}/dbsnp_137.hg19.vcf -nct $(CPU_THREADS)
 
 %.bqsr.bam : %.realn.bam
 	${MAKE} ${@:bqsr.bam=recal.grp}
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T PrintReads -I $< -R ${ALIGN_BASE} -BQSR ${@:bqsr.bam=recal.grp} -o $@
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T PrintReads -I $< -R ${ALIGN_BASE} -BQSR ${@:bqsr.bam=recal.grp} -o $@ -nct $(CPU_THREADS)
 	${TOOLS}/samtools/samtools index $@
 
 %.gatk.vcf : %.bqsr.bam
+	# Use UnifiedGenotyper with -nt to parallelize 
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19.vcf -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 
 all.vcf :
 	for i in Y M 22; do ${MAKE} chr$$i.gatk.vcf; done
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T CombineVariants -R ${ALIGN_BASE} `for i in M Y 22; do echo -n "--variant chr$$i.gatk.vcf "; done` -o $@ -genotypeMergeOptions UNIQUIFY
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T CombineVariants -R ${ALIGN_BASE} `for i in M Y 22; do echo -n "--variant chr$$i.gatk.vcf "; done` -o $@ -genotypeMergeOptions UNIQUIFY -nt $(DATA_THREADS)
 
 %.snp.vcf : %.vcf
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T SelectVariants -R ${ALIGN_BASE} -V $< -o $@ -selectType SNP
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T SelectVariants -R ${ALIGN_BASE} -V $< -o $@ -selectType SNP -nt $(DATA_THREADS)
 
 %.indel.vcf : %.vcf
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T SelectVariants -R ${ALIGN_BASE} -V $< -o $@ -selectType INDEL
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T SelectVariants -R ${ALIGN_BASE} -V $< -o $@ -selectType INDEL -nt $(DATA_THREADS)
 
 %.snp.vqsr : %.snp.vcf
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T VariantRecalibrator -R ${ALIGN_BASE} -input $< \
@@ -80,7 +84,8 @@ all.vcf :
 	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
 	-recalFile outdir/SAMPLE.tmp.snp.vcf \
 	-tranchesFile outdir/SAMPLE.tranches.gatk.snp.recal.csv \
-	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R
+	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R \
+	-nt $(DATA_THREADS)
 	#-an MQRankSum \ #disabled for genome subset run.  must be re-enabled for whole genome
 	#dbsnp.b37.vcf
 
