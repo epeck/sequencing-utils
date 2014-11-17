@@ -2,10 +2,6 @@
 include config.mk
 .PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
 
-# 2 GB per thread is required
-DATA_THREADS=10
-CPU_THREADS=2
-
 all: metrics all.vcf
 	
 metrics:
