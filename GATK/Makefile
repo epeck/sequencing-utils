@@ -72,11 +72,15 @@ all.vcf :
 	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 ${ANNOTATION}/hapmap_3.3.hg19.vcf \
 	-resource:omni,known=false,training=true,truth=true,prior=12.0 ${ANNOTATION}/1000G_omni2.5.hg19.vcf \
 	-resource:1000G,known=false,training=true,truth=false,prior=10.0 ${ANNOTATION}/1000G_phase1.snps.high_confidence.hg19.vcf \
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.vcf \
-	-mode SNP -an DP -an FS -an ReadPosRankSum -an MQRankSum \
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.unmangled.vcf \
+	-mode SNP \
+	-an DP \
+	-an FS \
+	-an ReadPosRankSum \
 	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
 	-recalFile outdir/SAMPLE.tmp.snp.vcf \
 	-tranchesFile outdir/SAMPLE.tranches.gatk.snp.recal.csv \
 	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R
+	#-an MQRankSum \ #disabled for genome subset run.  must be re-enabled for whole genome
 	#dbsnp.b37.vcf
 
