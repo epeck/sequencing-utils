@@ -1,8 +1,7 @@
+# !!!! Configure variables required in this Makefile !!!!
+include config.mk
 .PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
-SAM_HEADER=../../../../hadoopuser/aday/NA12878.new_header.sam
-ALIGN_BASE=../../../../hadoopuser/aday/hg19/hg19.fa
-ANNOTATION=../../../../hadoopuser/aday/vcf
-TOOLS=../
+
 # 2 GB per thread is required
 DATA_THREADS=10
 CPU_THREADS=2
