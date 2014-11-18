@@ -7,10 +7,10 @@ all:
 	${MAKE} bwa.built
 	${MAKE} htsjdk.built
 	${MAKE} picard.built
-	${MAKE} gatk.built
-	${MAKE} adam.built
-	${MAKE} bamtools.built
-	${MAKE} gatk-protected.built
+	#${MAKE} gatk.built
+	#${MAKE} adam.built
+	#${MAKE} bamtools.built
+	#${MAKE} gatk-protected.built
 
 clean:
 	rm -rf ${PROJECTS}
