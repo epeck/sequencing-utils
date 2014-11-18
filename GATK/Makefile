@@ -39,7 +39,8 @@ all.bam :
 	${TOOLS}/samtools/samtools index $@
 
 ####
-chromosomes : chr22.split.bam chrY.split.bam chrM.split.bam
+chromosomes :
+	for i in `seq 1 22` X Y M; do ${MAKE} chr$$i.split.bam; done
 
 
 %.split.bam : all.bam
