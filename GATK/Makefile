@@ -1,13 +1,16 @@
 .PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
 SAM_HEADER=../../aday/NA12878.new_header.sam
 ALIGN_BASE=../../aday/hg19/hg19.fa
-ANNOTATION=../../aday/vcf.bak
+ANNOTATION=../../aday/vcf
 TOOLS=../
 # 2 GB per thread is required
 DATA_THREADS=10
 CPU_THREADS=2
 
 all: metrics all.vcf
+
+clean:
+	rm -f *.bam *.bai *.vcf *.grp *.intervals *.idx
 	
 metrics:
 	mkdir -p metrics
