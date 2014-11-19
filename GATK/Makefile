@@ -7,6 +7,9 @@ TOOLS=../
 DATA_THREADS=10
 CPU_THREADS=2
 
+READGROUPS=0 1 2
+CHROMOSOMES=1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y M
+
 all: metrics all.vcf
 
 clean:
@@ -34,13 +37,17 @@ metrics:
 	touch $@
 
 all.bam :
-	for i in 0 1 2; do ${MAKE} RG$$i.tagged.bam; done
-	${TOOLS}/samtools/samtools merge $@ RG*.tagged.bam
+	for i in ${RG}; do ${MAKE} RG$$i.tagged.bam; done
+	if [ `ls RG*.tagged.bam | wc -w` gt 1 ]; then \
+	  ${TOOLS}/samtools/samtools merge $@ `ls RG*.tagged.bam`; \
+	else \
+	  ln -s `ls RG*.tagged.bam` $@; \
+	fi
 	${TOOLS}/samtools/samtools index $@
 
 ####
 chromosomes :
-	for i in `seq 1 22` X Y M; do ${MAKE} chr$$i.split.bam; done
+	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.split.bam; done
 
 
 %.split.bam : all.bam
