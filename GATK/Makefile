@@ -48,6 +48,7 @@ all.bam :
 ####
 chromosomes :
 	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.split.bam; done
+	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.chr.metrics; done
 
 
 %.split.bam : all.bam
