@@ -23,11 +23,11 @@ metrics:
 	${TOOLS}/samtools/samtools index $@
 
 %.rg.metrics : %.tagged.bam
-	ALIGN_BASE=${ALIGN_BASE} TOOLS=${TOOLS} sh ../bin/picard_metrics.sh $<
+	ALIGN_BASE=${ALIGN_BASE} TOOLS=${TOOLS} bash ../bin/picard_metrics.sh $<
 	touch $@
 
 %.chr.metrics : %.split.bam
-	ALIGN_BASE=${ALIGN_BASE} TOOLS=${TOOLS} sh ../bin/picard_metrics.sh $<
+	ALIGN_BASE=${ALIGN_BASE} TOOLS=${TOOLS} bash ../bin/picard_metrics.sh $<
 	touch $@
 
 all.bam :
