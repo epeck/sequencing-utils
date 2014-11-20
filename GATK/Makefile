@@ -1,12 +1,6 @@
+# !!!! Configure variables required in this Makefile !!!!
+include config.mk
 .PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
-SAM_HEADER=../../aday/NA12878.new_header.sam
-ALIGN_BASE=../../aday/hg19/hg19.fa
-ANNOTATION=../../aday/vcf
-TOOLS=../
-# 2 GB per thread is required
-DATA_THREADS=10
-CPU_THREADS=2
-
 READGROUPS=0 1 2
 CHROMOSOMES=1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y M
 
@@ -93,12 +87,21 @@ all.vcf :
 	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 ${ANNOTATION}/hapmap_3.3.hg19.vcf \
 	-resource:omni,known=false,training=true,truth=true,prior=12.0 ${ANNOTATION}/1000G_omni2.5.hg19.vcf \
 	-resource:1000G,known=false,training=true,truth=false,prior=10.0 ${ANNOTATION}/1000G_phase1.snps.high_confidence.hg19.vcf \
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.vcf \
-	-mode SNP -an DP -an FS -an ReadPosRankSum -an MQRankSum \
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.unmangled.vcf \
+	-mode SNP \
+	-an DP \
+	-an FS \
+	-an ReadPosRankSum \
 	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
 	-recalFile outdir/SAMPLE.tmp.snp.vcf \
 	-tranchesFile outdir/SAMPLE.tranches.gatk.snp.recal.csv \
+<<<<<<< HEAD
 	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R
 	-nt $(DATA_THREADS)
+=======
+	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R \
+	-nt $(DATA_THREADS)
+	#-an MQRankSum \ #disabled for genome subset run.  must be re-enabled for whole genome
+>>>>>>> 2e4fc5e628e1e6698b388d6710d541c6cc40c405
 	#dbsnp.b37.vcf
 

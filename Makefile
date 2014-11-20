@@ -1,10 +1,6 @@
 GITHUB_USER=allenday
 PROJECTS=htslib samtools bwa htsjdk picard gatk adam bamtools gatk-protected
 
-clean:
-	rm -rf ${PROJECTS}
-	rm -rf *.built
-
 all:
 	${MAKE} htslib.built
 	${MAKE} samtools.built
@@ -15,6 +11,10 @@ all:
 	${MAKE} adam.built
 	${MAKE} bamtools.built
 	${MAKE} gatk-protected.built
+
+clean:
+	rm -rf ${PROJECTS}
+	rm -rf *.built
 
 htslib.built:
 	git clone git@github.com:${GITHUB_USER}/htslib.git
