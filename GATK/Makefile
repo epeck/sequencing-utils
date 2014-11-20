@@ -95,13 +95,7 @@ all.vcf :
 	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
 	-recalFile outdir/SAMPLE.tmp.snp.vcf \
 	-tranchesFile outdir/SAMPLE.tranches.gatk.snp.recal.csv \
-<<<<<<< HEAD
-	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R
-	-nt $(DATA_THREADS)
-=======
 	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R \
 	-nt $(DATA_THREADS)
 	#-an MQRankSum \ #disabled for genome subset run.  must be re-enabled for whole genome
->>>>>>> 2e4fc5e628e1e6698b388d6710d541c6cc40c405
 	#dbsnp.b37.vcf
-
