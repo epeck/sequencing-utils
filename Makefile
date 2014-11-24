@@ -1,3 +1,7 @@
+#brew install ant cmake
+#JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.7.0_71.jdk/Contents/Home
+MAVEN_OPTS="-Xmx1g -XX:MaxPermSize=512m"
+
 GITHUB_USER=allenday
 PROJECTS=htslib samtools bwa htsjdk picard gatk adam bamtools gatk-protected
 
@@ -7,9 +11,9 @@ all:
 	${MAKE} bwa.built
 	${MAKE} htsjdk.built
 	${MAKE} picard.built
-	${MAKE} gatk.built
 	${MAKE} adam.built
 	${MAKE} bamtools.built
+	${MAKE} gatk.built
 	${MAKE} gatk-protected.built
 
 clean:
@@ -48,7 +52,8 @@ gatk.built:
 	touch $@
 
 adam.built:
-	git clone git@github.com:${GITHUB_USER}/adam.git
+	echo ${MAVEN_OPTS}
+	#git clone git@github.com:${GITHUB_USER}/adam.git
 	cd adam && mvn package install && cd ..
 	touch $@
 
