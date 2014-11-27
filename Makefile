@@ -76,8 +76,7 @@ genome:
 	#rm -f hg19/hg19.fa
 	#for i in ${CHROMOSOMES}; do cat hg19/chr$$i.fa >> hg19/hg19.fa; done
 	#java -jar ./picard/dist/picard.jar CreateSequenceDictionary R=hg19/hg19.fa O=hg19/hg19.dict
-
-
+	#./samtools/samtools faidx hg19/hg19.fa
 
 ####
 #annotation files
