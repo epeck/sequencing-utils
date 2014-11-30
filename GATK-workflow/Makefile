@@ -4,11 +4,15 @@ include config.mk
 READGROUPS=0 1 2
 CHROMOSOMES=1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y M
 
+CHR_SPLIT_BAM:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.split.bam "}@F'`
+CHR_CHR_METRICS:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.chr.metrics "}@F'`
+CHR_GATK_VCF:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.gatk.vcf "}@F'`
+
 all: metrics all.vcf
 
 clean:
 	rm -f *.bam *.bai *.vcf *.grp *.intervals *.idx
-	
+
 metrics:
 	mkdir -p metrics
 
@@ -41,8 +45,10 @@ all.bam :
 
 ####
 chromosomes :
-	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.split.bam; done
-	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.chr.metrics; done
+	${MAKE} -j${DATA_THREADS} ${CHR_SPLIT_BAM}
+	${MAKE} -j${DATA_THREADS} ${CHR_CHR_METRICS}
+	#for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.split.bam; done
+	#for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.chr.metrics; done
 
 
 %.split.bam : all.bam
@@ -73,7 +79,7 @@ chromosomes :
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19.vcf -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 
 all.vcf :
-	for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.gatk.vcf; done
+	${MAKE} ${CHR_GATK_VCF}
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T CombineVariants -R ${ALIGN_BASE} `for i in ${CHROMOSOMES}; do echo -n "--variant chr$$i.gatk.vcf "; done` -o $@ -genotypeMergeOptions UNIQUIFY -nt $(DATA_THREADS)
 
 %.snp.vcf : %.vcf
