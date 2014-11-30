@@ -44,6 +44,7 @@ all.bam :
 	${TOOLS}/samtools/samtools index $@
 
 ####
+#XXX better to put CHR_SPLIT_BAM and CHR_CHR_METRICS on first line for parallism, but some syntax problem needs to be investigated
 chromosomes :
 	${MAKE} -j${DATA_THREADS} ${CHR_SPLIT_BAM}
 	${MAKE} -j${DATA_THREADS} ${CHR_CHR_METRICS}
@@ -78,6 +79,7 @@ chromosomes :
 	# Use UnifiedGenotyper with -nt to parallelize 
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19.vcf -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 
+#XXX better to put CHR_GATK_VCF on first line for parallism, but some syntax problem needs to be investigated
 all.vcf :
 	${MAKE} ${CHR_GATK_VCF}
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T CombineVariants -R ${ALIGN_BASE} `for i in ${CHROMOSOMES}; do echo -n "--variant chr$$i.gatk.vcf "; done` -o $@ -genotypeMergeOptions UNIQUIFY -nt $(DATA_THREADS)
