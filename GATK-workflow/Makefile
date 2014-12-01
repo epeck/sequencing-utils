@@ -1,12 +1,12 @@
 # !!!! Configure variables required in this Makefile !!!!
 include config.mk
-.PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp
+.PRECIOUS : %.sam %.bam %.vcf %.intervals %.grp %.nodup.bam %.bai
 READGROUPS=0 1 2
 CHROMOSOMES=1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y M
 
-CHR_SPLIT_BAM:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.split.bam "}@F'`
-CHR_CHR_METRICS:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.chr.metrics "}@F'`
-CHR_GATK_VCF:=`perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.gatk.vcf "}@F'`
+CHR_SPLIT_BAM:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.split.bam "}@F'}
+CHR_CHR_METRICS:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.chr.metrics "}@F'}
+CHR_GATK_VCF:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.gatk.vcf "}@F'}
 
 all: metrics all.vcf
 
@@ -17,7 +17,7 @@ metrics:
 	mkdir -p metrics
 
 %.base.sam : %.fq
-	cat $< | ${TOOLS}/bwa/bwa mem hg19/hg19.fa - | perl -ne 'chomp;print "$_";print "\tRG:Z:0" unless m/^@/;print "\n"' | ${TOOLS}/samtools/samtools sort -O sam -T /tmp/sam$$. | grep -vE '^@' > $@
+	cat $< | ${TOOLS}/bwa/bwa mem ${REFERENCE} - | perl -ne 'chomp;print "$_";print "\tRG:Z:0" unless m/^@/;print "\n"' | ${TOOLS}/samtools/samtools sort -O sam -T /tmp/sam$$. | grep -vE '^@' > $@
 
 %.tagged.sam : %.base.sam
 	cat ${SAM_HEADER} $< | perl -ne 'chomp;print "$$_";print "\tRG:Z:'`echo $< | perl -ne "m#RG(\\d+)#;print qq(\\$$1)"`'" unless m/^@/;print "\n"' | ${TOOLS}/samtools/samtools sort -O sam -T /tmp/sam`date +%s`. | grep -vE '^@' > $@
@@ -44,16 +44,21 @@ all.bam :
 	${TOOLS}/samtools/samtools index $@
 
 ####
-#XXX better to put CHR_SPLIT_BAM and CHR_CHR_METRICS on first line for parallism, but some syntax problem needs to be investigated
-chromosomes :
-	${MAKE} -j${DATA_THREADS} ${CHR_SPLIT_BAM}
-	${MAKE} -j${DATA_THREADS} ${CHR_CHR_METRICS}
+chromosomes : ${CHR_SPLIT_BAM} ${CHR_CHR_METRICS}
 	#for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.split.bam; done
 	#for i in ${CHROMOSOMES}; do ${MAKE} chr$$i.chr.metrics; done
 
 
 %.split.bam : all.bam
+	#${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@.tmp
+	#${TOOLS}/samtools/samtools reheader ${SAM_HEADER} $@.tmp > $@
+	#rm $@.tmp
 	${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@
+
+	#cat ${SAM_HEADER} > $(@:.bam=.sam)
+	#${TOOLS}/samtools/samtools view all.bam $(@:.split.bam=) >> $(@:.bam=.sam)
+	#${TOOLS}/samtools/samtools view -b $(@:.bam=.sam) > $@
+	#rm -f $(@:.bam=.sam)
 
 %.nodup.bam : %.split.bam
 	java -jar ${TOOLS}/picard/dist/picard.jar MarkDuplicates I=$< O=$@ M=metrics/${@:bam=}metrics VALIDATION_STRINGENCY=SILENT ASSUME_SORTED=true REMOVE_DUPLICATES=false
@@ -80,8 +85,7 @@ chromosomes :
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19.vcf -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 
 #XXX better to put CHR_GATK_VCF on first line for parallism, but some syntax problem needs to be investigated
-all.vcf :
-	${MAKE} ${CHR_GATK_VCF}
+all.vcf : ${CHR_GATK_VCF}
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T CombineVariants -R ${ALIGN_BASE} `for i in ${CHROMOSOMES}; do echo -n "--variant chr$$i.gatk.vcf "; done` -o $@ -genotypeMergeOptions UNIQUIFY -nt $(DATA_THREADS)
 
 %.snp.vcf : %.vcf
