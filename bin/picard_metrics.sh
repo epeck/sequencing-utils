@@ -3,9 +3,6 @@ mkdir -p metrics
 PREFIX=${1/.bam/}
 OUTPUT="metrics/$PREFIX"
 
-echo $PREFIX
-echo $OUTPUT
-
 for i in CollectGcBiasMetrics
 do
   java -jar ${TOOLS}/picard/dist/picard.jar $i VERBOSITY=ERROR R=${ALIGN_BASE} I=$PREFIX.bam O=$OUTPUT.$i.out CHART=$OUTPUT.$i.pdf 2>$OUTPUT.$i.err
