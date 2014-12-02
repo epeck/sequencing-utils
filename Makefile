@@ -78,6 +78,9 @@ genome:
 	java -jar ./picard/dist/picard.jar CreateSequenceDictionary R=hg19/hg19.fa O=hg19/hg19.dict
 	./samtools/samtools faidx hg19/hg19.fa
 	./bwa/bwa index hg19/hg19.fa
+	#for i in chr*.fa; do ../samtools/samtools faidx $i ; done
+	#for i in chr*.fa; do  java -jar ../picard/dist/picard.jar CreateSequenceDictionary R=../synthetic/$i O=../synthetic/${i/fa/dict}; done
+
 
 ####
 #annotation files
