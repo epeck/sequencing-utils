@@ -7,8 +7,9 @@ CHROMOSOMES=1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y M
 CHR_SPLIT_BAM:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.split.bam "}@F'}
 CHR_CHR_METRICS:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.chr.metrics "}@F'}
 CHR_GATK_VCF:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.gatk.vcf "}@F'}
+CHR_TAGGED_BAM:=${shell perl -e '@F=split/\s+/,"${CHROMOSOMES}";print map{"chr$$_.tagged.bam "}@F'}
 
-all: samheaders metrics all.vcf
+all: samheaders qc all.vcf
 
 clean:
 	rm -f *.bam *.bai *.vcf *.grp *.intervals *.idx
@@ -19,8 +20,9 @@ samheaders:
 	${TOOLS}/samtools/samtools view -H RG0.tagged.bam > samheader/RG0.header.sam
 	perl ../bin/samheader_split.pl samheader/RG0.header.sam samheader/
 
-metrics:
+qc: ${CHR_SPLIT_BAM}
 	mkdir -p metrics
+	${MAKE} ${CHR_CHR_METRICS}
 
 %.base.sam : %.fq
 	cat $< | ${TOOLS}/bwa/bwa mem ${ALIGN_BASE}/${ALIGN_GENOME} - | perl -ne 'chomp;print "$_";print "\tRG:Z:0" unless m/^@/;print "\n"' | ${TOOLS}/samtools/samtools sort -O sam -T /tmp/sam$$. | grep -vE '^@' > $@
@@ -37,7 +39,7 @@ metrics:
 	touch $@
 
 %.chr.metrics : %.split.bam
-	ALIGN_BASE=${ALIGN_BASE}/${ALIGN_GENOME} TOOLS=${TOOLS} bash ../bin/picard_metrics.sh $<
+	ALIGN_BASE=${ALIGN_BASE}/${@:.chr.metrics=.fa} TOOLS=${TOOLS} bash ../bin/picard_metrics.sh $<
 	touch $@
 
 all.bam :
