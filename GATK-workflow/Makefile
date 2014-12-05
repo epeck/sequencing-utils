@@ -25,8 +25,10 @@ steps:
 	make -j12 intervals #500M RAM per
 	make -j5 realign #5G RAM per
 	make -j3 recal #5G RAM per
-	make -j3 bqsr
+	make -j3 bqsr #3G RAM per
 	make -j6 vcf
+	make all.vcf #fast
+	make -j2 all.snp.vcf all.indel.vcf #4G RAM per
 
 clean:
 	rm -f *.bam *.bai *.vcf *.grp *.intervals *.idx
@@ -116,7 +118,6 @@ vcf : ${CHR_GATK_VCF}
 
 %.gatk.vcf : %.bqsr.bam
 	# Use UnifiedGenotyper with -nt to parallelize 
-	#java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE}/${ALIGN_GENOME} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19.vcf -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T HaplotypeCaller -R ${ALIGN_BASE}/${@:.gatk.vcf=.fa} -I $< --dbsnp ${ANNOTATION}/dbsnp_137.hg19/${@:.gatk.vcf=.vcf} -o $@ -stand_call_conf 20.0 -stand_emit_conf 10.0 -gt_mode DISCOVERY
 
 #XXX better to put CHR_GATK_VCF on first line for parallism, but some syntax problem needs to be investigated
