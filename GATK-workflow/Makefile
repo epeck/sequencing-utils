@@ -1,6 +1,6 @@
 # !!!! Configure variables required in this Makefile !!!!
 include config.mk
-.PRECIOUS : %.sam %.bam %.vcf %.realn.intervals %.recal.grp %.nodup.bam %.bai %.realn.bam %.bqsr.bam %.gatk.vcf
+.PRECIOUS : %.sam %.bam %.vcf %.realn.intervals %.recal.grp %.nodup.bam %.bai %.realn.bam %.bqsr.bam %.gatk.vcf %.indel.vcf %.snp.vcf %.snp.vqsr.vcf %.indel.vqsr.vcf
 READGROUPS=0 1 2
 CHROMOSOMES=1 M Y 22 21 20 19 2 18 17 16 15 3 14 4 13 5 12 6 11 7 10 9 8 X
 
@@ -130,20 +130,39 @@ all.vcf : ${CHR_GATK_VCF}
 %.indel.vcf : %.vcf
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T SelectVariants -R ${ALIGN_BASE}/${ALIGN_GENOME} -V $< -o $@ -selectType INDEL -nt $(DATA_THREADS)
 
-%.snp.vqsr : %.snp.vcf
+%.snp.vqsr.vcf : %.snp.vcf
 	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T VariantRecalibrator -R ${ALIGN_BASE}/${ALIGN_GENOME} -input $< \
 	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 ${ANNOTATION}/hapmap_3.3.hg19.vcf \
 	-resource:omni,known=false,training=true,truth=true,prior=12.0 ${ANNOTATION}/1000G_omni2.5.hg19.vcf \
 	-resource:1000G,known=false,training=true,truth=false,prior=10.0 ${ANNOTATION}/1000G_phase1.snps.high_confidence.hg19.vcf \
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.unmangled.vcf \
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.hg19.vcf \
 	-mode SNP \
 	-an DP \
 	-an FS \
 	-an ReadPosRankSum \
+	-an MQRankSum \
 	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
-	-recalFile outdir/SAMPLE.tmp.snp.vcf \
-	-tranchesFile outdir/SAMPLE.tranches.gatk.snp.recal.csv \
-	-rscriptFile outdir/SAMPLE.gatk.recal.snp.R \
+	-recalFile $@ \
+	-tranchesFile ${<:.vcf=.recal.csv} \
+	-rscriptFile ${<:.vcf=.recal.R} \
 	-nt $(DATA_THREADS)
+
+%.indel.vqsr.vcf : %.indel.vcf
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T VariantRecalibrator -R ${ALIGN_BASE}/${ALIGN_GENOME} -input $< \
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 ${ANNOTATION}/hapmap_3.3.hg19.vcf \
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 ${ANNOTATION}/1000G_omni2.5.hg19.vcf \
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 ${ANNOTATION}/1000G_phase1.snps.high_confidence.hg19.vcf \
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.hg19.vcf \
+	-mode INDEL \
+	-an DP \
+	-an FS \
+	-an ReadPosRankSum \
+	-an MQRankSum \
+	-tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
+	-recalFile $@ \
+	-tranchesFile ${<:.vcf=.recal.csv} \
+	-rscriptFile ${<:.vcf=.recal.R} \
+	-nt $(DATA_THREADS)
+	#-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 ${ANNOTATION}/dbsnp_137.b37.unmangled.vcf \
 	#-an MQRankSum \ #disabled for genome subset run.  must be re-enabled for whole genome
 	#dbsnp.b37.vcf
