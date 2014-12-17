@@ -52,10 +52,10 @@ chromosomes : ${CHR_SPLIT_BAM} ${CHR_CHR_METRICS}
 
 
 %.split.bam : all.bam
-	#${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@.tmp
-	#${TOOLS}/samtools/samtools reheader ${SAM_HEADER} $@.tmp > $@
-	#rm $@.tmp
-	${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@
+	${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@.tmp
+	${TOOLS}/samtools/samtools reheader ${SAM_HEADER} $@.tmp > $@
+	rm $@.tmp
+	#${TOOLS}/samtools/samtools view -b all.bam $(@:.split.bam=) > $@
 
 	#cat ${SAM_HEADER} > $(@:.bam=.sam)
 	#${TOOLS}/samtools/samtools view all.bam $(@:.split.bam=) >> $(@:.bam=.sam)
@@ -67,7 +67,7 @@ chromosomes : ${CHR_SPLIT_BAM} ${CHR_CHR_METRICS}
 	${TOOLS}/samtools/samtools index $@
 
 %.realn.intervals : %.nodup.bam
-	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T RealignerTargetCreator -I $< -R ${ALIGN_BASE} -o $@ -known ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -known ${ANNOTATION}/1000G_phase1.indels.hg19.vcf -nt $(DATA_THREADS)
+	java -jar ${TOOLS}/gatk-protected/target/GenomeAnalysisTK.jar -T RealignerTargetCreator -I $< -R ${ALIGN_BASE}/${ALIGN_GENOME} -o $@ -known ${ANNOTATION}/Mills_and_1000G_gold_standard.indels.hg19.vcf -known ${ANNOTATION}/1000G_phase1.indels.hg19.vcf -nt $(DATA_THREADS)
 
 %.realn.bam : %.nodup.bam
 	${MAKE} ${@:bam=intervals}
